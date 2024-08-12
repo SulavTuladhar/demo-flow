@@ -85,13 +85,14 @@ function ReactFlowContainer() {
 
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
+      const id = uid(3);
       connectingNodeId.current = null;
       connectingNodeHandle.current = null;
       const edge = {
         ...connection,
         // animated: true,
         id: `${uid(3)}`,
-        type: "customEdge",
+        type: "step",
         markerEnd: {
           type: MarkerType.ArrowClosed,
         },
@@ -180,7 +181,7 @@ function ReactFlowContainer() {
             source: connectingNodeId.current,
             sourceHandle: connectingNodeHandle.current,
             target: id,
-            type: "customEdge",
+            type: "step",
             markerEnd: {
               type: MarkerType.ArrowClosed,
             },

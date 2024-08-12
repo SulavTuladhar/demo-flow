@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from "react";
+import { Switch } from "@material-tailwind/react";
+import { getOutgoers, useReactFlow } from "@xyflow/react";
+import React, { useMemo, useRef, useState } from "react";
 import { MdDelete } from "react-icons/md";
 import Modal from "react-modal";
 
@@ -10,46 +12,56 @@ const customStyles = {
     bottom: "0",
     marginRight: "0",
     transform: "none",
-    width: "25%",
+    width: "15%",
     height: "100%",
   },
 };
 
 interface ModalInterface {
+  id: string;
   data: any;
   isModalOpen: boolean;
   closeModal: () => void;
   title: string;
   saveFunc: (data) => void;
+  onConnectedNodeDelete: any;
 }
 
 function NodeEditModal({
+  id,
   data,
   isModalOpen,
   closeModal,
   saveFunc,
+  onConnectedNodeDelete,
 }: ModalInterface) {
-  console.log("data is >> ", data);
-  const { title, description, color } = useMemo(() => {
+  const { getNode, getNodes, getEdges } = useReactFlow();
+  const { title, description, color, hasSideNodes } = useMemo(() => {
     return {
       title: data.title,
       description: data.description,
       color: data.color,
+      hasSideNodes: data.hasSideNodes,
     };
   }, [data]);
-  console.log("title and description", title, description);
   const [nodeTitle, setNodeTitle] = useState<string>(title ?? "");
   const [nodeDescription, setNodeDescription] = useState<string>(
     description ?? ""
   );
   const [nodeColor, setColor] = useState<string>(color ?? "");
+  const [checked, setChecked] = useState(hasSideNodes ?? null);
+  const isChildrenNodeRef = useRef<any>(null);
+  const currentNode = getNode(id);
+  const outgoers = getOutgoers(currentNode as any, getNodes(), getEdges());
 
   const onSave = (e) => {
     e.preventDefault();
+    const sideNodes = isChildrenNodeRef.current.checked;
     const updatedData = {
       title: nodeTitle,
       description: nodeDescription,
       color: nodeColor,
+      hasSideNodes: sideNodes,
     };
     saveFunc(updatedData);
   };
@@ -84,11 +96,21 @@ function NodeEditModal({
               onChange={(e) => setNodeDescription(e.target.value)}
               className="border p-2 rounded-md mr-2 w-full outline-none bg-[#f5f6fa]"
             />
+            <p className="text-sm">Has Side Handles </p>
+            <Switch
+              onPointerEnterCapture={undefined}
+              onPointerLeaveCapture={undefined}
+              crossOrigin={undefined}
+              inputRef={isChildrenNodeRef}
+              checked={checked}
+              onChange={setChecked}
+            />
           </div>
           <hr />
           {/* Node Detail */}
           <div className="text-sm">
             <p className="py-2">Customize Node</p>
+
             <div className="flex items-center justify-between">
               <label>Color</label>
               <input
@@ -103,12 +125,18 @@ function NodeEditModal({
           {/* Connected Nodes */}
           <div>
             <p>Connected Nodes</p>
-            <div className="flex items-center justify-between border border-red-400 p-2 rounded-lg my-2">
-              RTO
-              <button className="bg-red-400 p-1 rounded-full text-white">
-                <MdDelete />
-              </button>
-            </div>
+            {outgoers &&
+              outgoers.map((item) => (
+                <div className="flex items-center justify-between border border-red-400 p-2 rounded-lg my-2">
+                  {item.data.title}
+                  <button
+                    onClick={() => onConnectedNodeDelete(item.id)}
+                    className="bg-red-400 p-1 rounded-full text-white"
+                  >
+                    <MdDelete />
+                  </button>
+                </div>
+              ))}
           </div>
         </div>
         <button
